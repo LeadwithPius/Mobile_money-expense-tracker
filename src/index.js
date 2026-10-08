@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { parseMtn } from "./mtn.js";
 import { categorizeTransaction } from "./categorizer.js";
+import { deduplicateTransactions } from "./deduplicator.js";
 
 const messagesFile = new URL(
   "../private/messages.txt",
@@ -42,8 +43,17 @@ async function main() {
   console.log("Successfully parsed:", transactions.length);
   console.log("Not parsed:", unparsedLines.length);
 
+  const { accepted, duplicates,needsReview} = deduplicateTransactions(transactions);
+
+console.log("Accepted transactions:", accepted.length);
+console.log("Duplicates skipped:", duplicates.length);
+console.log("Held for duplicate review:", needsReview.length);
+
+for (const item of needsReview) {console.log(`Line ${item.transaction.sourceLine}: ${item.reason}` );
+}
+
  console.table(
-  transactions.map((transaction) => ({
+  accepted.map((transaction) => ({
     line: transaction.sourceLine,
     type: transaction.type,
     category: transaction.category,
