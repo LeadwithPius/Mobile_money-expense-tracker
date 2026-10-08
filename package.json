@@ -4,8 +4,9 @@
   "description": "A full-stack app that turns pasted mobile money SMS messages into clean, categorized transactions and a spending dashboard.",
   "main": "src/index.js",
   "scripts": {
-    "start": "node src/index.js",
-    "test": "vitest run"
+  "start": "node src/index.js",
+  "test": "vitest run",
+  "review": "node src/review.js"
   },
   "repository": {
     "type": "git",

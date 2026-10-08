@@ -309,11 +309,12 @@
     "warnings": [
       "missing_or_invalid_balance"
     ],
-    "category": "Money Received",
-    "categorySource": "transaction_type",
-    "needsCategoryReview": true,
+    "category": "Other Money Received",
+    "categorySource": "user",
+    "needsCategoryReview": false,
     "countsAsExpense": false,
-    "importedAt": "2026-10-08T16:36:13.597Z"
+    "importedAt": "2026-10-08T16:36:13.597Z",
+    "reviewedAt": "2026-10-08T16:48:43.089Z"
   },
   {
     "provider": "mtn",
