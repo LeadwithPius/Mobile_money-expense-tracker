@@ -35,3 +35,11 @@ Yello.You have received ZMW 20.00 from Airtel NFS – TAMARA KANA (XXXXXXX1835) 
 Y’ello. Payment of ZMW 5.00 to Mobile Money successful at 2026-09-02 06:14:43.Message:- Y’ello! You have successfully purchased K5:6GB/5hrs for 260764551835 valid until 2026-09-02 11:14:43.781.. Your new balance: 19.73 ZMW.Financial Transaction ID: 10411583581. Enjoy quicker & easier transactions on the MoMo app. Visit https://linktr.ee/MTNZambia to download.
 
 Yello, Payment of ZMW 19.99 to FNB FMCG . successful at 2026-09-01 09:17:24. Message -: Payment request. Your new balance:39.73 ZMW. Financial Transaction ID:10402028703. Thank you for using MTN Mobile Money
+
+You have withdrawn 50.00 ZMW from your mobile money account at  on 2026-09-21 12:48:45. Your new balance:217.65 ZMW. Financial Transaction Id: 10590760924.
+
+You have withdrawn 30.00 ZMW from your mobile money account at  on 2026-09-15 14:14:53. Your new balance:7.15 ZMW. Financial Transaction Id: 10538750129.
+
+You have withdrawn 20.00 ZMW from your mobile money account at  on 2026-09-14 14:22:07. Your new balance:2.73 ZMW. Financial Transaction Id: 10529759674.
+
+Yello.You have received ZMW 300.00 from Airtel NFS – Patrick Balla (XXXXXXX1835) on your mobile money account at 2026-09-20T20:08:31.140. Message from sender: MP260920.2008.D93218. Financial Transaction ID: 10586511405.

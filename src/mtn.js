@@ -21,6 +21,13 @@ const RECEIVED = new RegExp(
   "i"
 );
 
+const WITHDRAWAL = new RegExp(
+  "^You\\s+have\\s+withdrawn\\s+(?<amount>" + NUM + ")" +
+  "\\s+ZMW\\s+from\\s+your\\s+mobile\\s+money\\s+account" +
+  "\\s+at\\s+(?:(?<party>.+?)\\s+)?on\\s+" + STAMP,
+  "i"
+);
+
 const BALANCE = new RegExp(
   "\\bYour\\s+new\\s+balance\\s*:\\s*(" + NUM + ")\\s+ZMW\\b",
   "i"
@@ -60,7 +67,6 @@ function validTimestamp(date, time) {
 
 
 export function parseMtn(text) {
-  // 1. Check the input.
   if (typeof text !== "string" || !text.trim()) {
     return null;
   }
@@ -72,7 +78,7 @@ export function parseMtn(text) {
   if (!START.test(normalized)) {
     return null;
   }
-  
+
   const body = normalized.replace(START, "");
 
   const payment = body.match(PAYMENT);
