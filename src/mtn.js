@@ -73,33 +73,31 @@ export function parseMtn(text) {
 
   const normalized = text.trim().replace(/\s+/g, " ");
 
-  // 3. Check and remove the greeting.
-  // This recognizes a text format; it does not authenticate the sender.
-  if (!START.test(normalized)) {
-    return null;
-  }
 
-  const body = normalized.replace(START, "");
+const body = normalized.replace(START, "");
 
-  const payment = body.match(PAYMENT);
-  const match = payment || body.match(RECEIVED);
+const payment = body.match(PAYMENT);
+const received = body.match(RECEIVED);
+const withdrawal = body.match(WITHDRAWAL);
 
-  if (!match) {
-    return null;
-  }
+const match = payment || received || withdrawal;
+
+if (!match) {
+  return null;
+}
 
 
-  const { amount, party, date, time } = match.groups;
-  const amountNgwee = toNgwee(amount);
-  const counterparty = party.trim();
+ const { amount, party, date, time } = match.groups;
+ const amountNgwee = toNgwee(amount);
+const counterparty = party?.trim() || null;
 
-  if (
-    amountNgwee === null ||
-    !counterparty ||
-    !validTimestamp(date, time)
-  ) {
-    return null;
-  }
+if (
+  amountNgwee === null ||
+  (!withdrawal && !counterparty) ||
+  !validTimestamp(date, time)
+) {
+  return null;
+}
 
   const idMatch = body.match(TX_ID);
   const balanceMatch = body.match(BALANCE);
@@ -123,8 +121,13 @@ export function parseMtn(text) {
     provider: "mtn",
     currency: "ZMW",
     referenceCode,
-    type: payment ? "payment" : "received",
-    direction: payment ? "outgoing" : "incoming",
+    type: payment
+  ? "payment"
+  : received
+    ? "received"
+    : "withdrawal",
+
+direction: received ? "incoming" : "outgoing",
 
     amount: amountNgwee,
     fee: null,
