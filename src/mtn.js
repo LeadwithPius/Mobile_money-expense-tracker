@@ -1,10 +1,11 @@
 const NUM = "(?:\\d{1,3}(?:,\\d{3})+|\\d+)(?:\\.\\d{1,2})?";
 
-const START = /^Y['’]?ello\s*\.\s*/i;
+const START = /^Y['’]?ello\s*[.,]\s*/i;
 
 const STAMP =
-  "(?<date>\\d{4}-\\d{2}-\\d{2})\\s+" +
-  "(?<time>\\d{2}:\\d{2}:\\d{2})(?=$|[\\s.])";
+  "(?<date>\\d{4}-\\d{2}-\\d{2})[T\\s]+" +
+  "(?<time>\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,3})?)" +
+  "(?=$|\\s|\\.(?!\\d))";
 
 const PAYMENT = new RegExp(
   "^Payment\\s+of\\s+ZMW\\s+(?<amount>" + NUM + ")" +
@@ -55,16 +56,19 @@ function toNgwee(value) {
 }
 
 function validTimestamp(date, time) {
-  const timestamp = date + "T" + time;
-  const value = new Date(timestamp + "Z");
+  const [clock, fraction = ""] = time.split(".");
 
-  if (Number.isNaN(value.getTime())) {
-    return false;
-  }
+  // Normalize to exactly three millisecond digits for comparison.
+  const expected =
+    date + "T" + clock + "." + fraction.padEnd(3, "0") + "Z";
 
-  return value.toISOString().slice(0, 19) === timestamp;
+  const value = new Date(expected);
+
+  return (
+    !Number.isNaN(value.getTime()) &&
+    value.toISOString() === expected
+  );
 }
-
 
 export function parseMtn(text) {
   if (typeof text !== "string" || !text.trim()) {

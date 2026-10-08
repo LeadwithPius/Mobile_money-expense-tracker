@@ -238,5 +238,141 @@
     "needsCategoryReview": false,
     "countsAsExpense": false,
     "importedAt": "2026-10-08T16:15:52.867Z"
+  },
+  {
+    "provider": "mtn",
+    "currency": "ZMW",
+    "referenceCode": "10375921986",
+    "type": "payment",
+    "direction": "outgoing",
+    "amount": 500,
+    "fee": null,
+    "balanceAfter": 210,
+    "counterparty": "Mobile Money Data Bundle",
+    "occurredAt": "2026-08-29T12:57:35+02:00",
+    "warnings": [],
+    "category": "Mobile Data",
+    "categorySource": "rule",
+    "needsCategoryReview": true,
+    "countsAsExpense": true,
+    "importedAt": "2026-10-08T16:30:54.790Z"
+  },
+  {
+    "provider": "mtn",
+    "currency": "ZMW",
+    "referenceCode": "10402028703",
+    "type": "payment",
+    "direction": "outgoing",
+    "amount": 1999,
+    "fee": null,
+    "balanceAfter": 3973,
+    "counterparty": "FNB FMCG .",
+    "occurredAt": "2026-09-01T09:17:24+02:00",
+    "warnings": [],
+    "category": "Uncategorized",
+    "categorySource": "fallback",
+    "needsCategoryReview": true,
+    "countsAsExpense": null,
+    "importedAt": "2026-10-08T16:30:54.790Z"
+  },
+  {
+    "provider": "mtn",
+    "currency": "ZMW",
+    "referenceCode": "10375875961",
+    "type": "received",
+    "direction": "incoming",
+    "amount": 1000,
+    "fee": null,
+    "balanceAfter": null,
+    "counterparty": "Airtel NFS - Bruce Kenya (XXXXXXX1835)",
+    "occurredAt": "2026-08-29T12:52:33.903+02:00",
+    "warnings": [
+      "missing_or_invalid_balance"
+    ],
+    "category": "Money Received",
+    "categorySource": "transaction_type",
+    "needsCategoryReview": true,
+    "countsAsExpense": false,
+    "importedAt": "2026-10-08T16:36:13.597Z"
+  },
+  {
+    "provider": "mtn",
+    "currency": "ZMW",
+    "referenceCode": "10524660009",
+    "type": "received",
+    "direction": "incoming",
+    "amount": 2400,
+    "fee": null,
+    "balanceAfter": null,
+    "counterparty": "Airtel NFS – Clarah Musonda (XXXXXXX1835)",
+    "occurredAt": "2026-09-13T20:19:43.499+02:00",
+    "warnings": [
+      "missing_or_invalid_balance"
+    ],
+    "category": "Money Received",
+    "categorySource": "transaction_type",
+    "needsCategoryReview": true,
+    "countsAsExpense": false,
+    "importedAt": "2026-10-08T16:36:13.597Z"
+  },
+  {
+    "provider": "mtn",
+    "currency": "ZMW",
+    "referenceCode": "10533996736",
+    "type": "received",
+    "direction": "incoming",
+    "amount": 16000,
+    "fee": null,
+    "balanceAfter": null,
+    "counterparty": "Airtel NFS – Patrick Balla (XXXXXXX1835)",
+    "occurredAt": "2026-09-14T20:55:56.791+02:00",
+    "warnings": [
+      "missing_or_invalid_balance"
+    ],
+    "category": "Money Received",
+    "categorySource": "transaction_type",
+    "needsCategoryReview": true,
+    "countsAsExpense": false,
+    "importedAt": "2026-10-08T16:36:13.597Z"
+  },
+  {
+    "provider": "mtn",
+    "currency": "ZMW",
+    "referenceCode": "10471761153",
+    "type": "received",
+    "direction": "incoming",
+    "amount": 2000,
+    "fee": null,
+    "balanceAfter": null,
+    "counterparty": "Airtel NFS – TAMARA KANA (XXXXXXX1835)",
+    "occurredAt": "2026-09-08T15:53:42.069+02:00",
+    "warnings": [
+      "missing_or_invalid_balance"
+    ],
+    "category": "Money Received",
+    "categorySource": "transaction_type",
+    "needsCategoryReview": true,
+    "countsAsExpense": false,
+    "importedAt": "2026-10-08T16:36:13.597Z"
+  },
+  {
+    "provider": "mtn",
+    "currency": "ZMW",
+    "referenceCode": "10586511405",
+    "type": "received",
+    "direction": "incoming",
+    "amount": 30000,
+    "fee": null,
+    "balanceAfter": null,
+    "counterparty": "Airtel NFS – Patrick Balla (XXXXXXX1835)",
+    "occurredAt": "2026-09-20T20:08:31.140+02:00",
+    "warnings": [
+      "missing_or_invalid_balance"
+    ],
+    "category": "Money Received",
+    "categorySource": "transaction_type",
+    "needsCategoryReview": true,
+    "countsAsExpense": false,
+    "importedAt": "2026-10-08T16:36:13.597Z"
   }
 ]

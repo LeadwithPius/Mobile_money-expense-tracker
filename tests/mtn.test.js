@@ -225,3 +225,43 @@ test("categorization does not modify the parsed transaction", () => {
   expect(transaction).toEqual(original);
   expect(categorized).not.toBe(transaction);
 });
+
+test("parses a comma greeting and compact balance/ID fields", () => {
+  const message =
+    "Yello, Payment of ZMW 19.99 to FNB FMCG . successful at " +
+    "2026-09-01 09:17:24. Message -: Payment request. " +
+    "Your new balance:39.73 ZMW. " +
+    "Financial Transaction ID:10000000004. " +
+    "Thank you for using MTN Mobile Money";
+
+  expect(parseMtn(message)).toMatchObject({
+    referenceCode: "10000000004",
+    type: "payment",
+    direction: "outgoing",
+    amount: 1999,
+    balanceAfter: 3973,
+    counterparty: "FNB FMCG .",
+    occurredAt: "2026-09-01T09:17:24+02:00",
+    warnings: []
+  });
+});
+
+test("parses received money with a T separator and milliseconds", () => {
+  const message =
+    "Yello.You have received ZMW 24.00 from " +
+    "Airtel NFS – Example Sender (XXXXXXX0000) " +
+    "on your mobile money account at 2026-09-13T20:19:43.499. " +
+    "Message from sender: EXAMPLE-REFERENCE. " +
+    "Financial Transaction ID: 10000000005.";
+
+  expect(parseMtn(message)).toMatchObject({
+    referenceCode: "10000000005",
+    type: "received",
+    direction: "incoming",
+    amount: 2400,
+    counterparty: "Airtel NFS – Example Sender (XXXXXXX0000)",
+    occurredAt: "2026-09-13T20:19:43.499+02:00",
+    balanceAfter: null,
+    warnings: ["missing_or_invalid_balance"]
+  });
+});
