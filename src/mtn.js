@@ -1,31 +1,132 @@
-const NUM = "([\\d,]+(?:\\.\\d{1,2})?)";
-const toCents = (s) => Math.round(parseFloat(s.replace(/,/g, "")) * 100);
+const NUM = "(?:\\d{1,3}(?:,\\d{3})+|\\d+)(?:\\.\\d{1,2})?";
 
-const START = /^Y[’']ello\./i;
+const START = /^Y['’]?ello\s*\.\s*/i;
+
+const STAMP =
+  "(?<date>\\d{4}-\\d{2}-\\d{2})\\s+" +
+  "(?<time>\\d{2}:\\d{2}:\\d{2})(?=$|[\\s.])";
+
 const PAYMENT = new RegExp(
-  `Payment of ZMW ${NUM} to (.+?) successful at (\\d{4}-\\d{2}-\\d{2}) (\\d{2}:\\d{2}:\\d{2})`
+  "^Payment\\s+of\\s+ZMW\\s+(?<amount>" + NUM + ")" +
+  "\\s+to\\s+(?<party>.+?)" +
+  "\\s+successful\\s+at\\s+" + STAMP,
+  "i"
 );
-const BALANCE = new RegExp(`Your new balance: ${NUM} ZMW`);
-const TX_ID = /Financial Transaction ID: (\d+)/;
+
+const RECEIVED = new RegExp(
+  "^You\\s+have\\s+received\\s+ZMW\\s+(?<amount>" + NUM + ")" +
+  "\\s+(?:ZMW\\s+)?from\\s+(?<party>.+?)" +
+  "(?:\\s+on\\s+your\\s+mobile\\s+money\\s+account)?" +
+  "\\s+at\\s+" + STAMP,
+  "i"
+);
+
+const BALANCE = new RegExp(
+  "\\bYour\\s+new\\s+balance\\s*:\\s*(" + NUM + ")\\s+ZMW\\b",
+  "i"
+);
+
+const TX_ID =
+  /\bFinancial\s+Transaction\s+ID\s*:\s*(\d+)(?=$|[\s.,;])/i;
+
+
+const VALID_AMOUNT = new RegExp("^" + NUM + "$");
+
+function toNgwee(value) {
+  if (typeof value !== "string" || !VALID_AMOUNT.test(value)) {
+    return null;
+  }
+
+  const cleaned = value.replace(/,/g, "");
+  const [whole, fraction = ""] = cleaned.split(".");
+
+  const amount =
+    Number(whole) * 100 +
+    Number(fraction.padEnd(2, "0"));
+
+  return Number.isSafeInteger(amount) ? amount : null;
+}
+
+function validTimestamp(date, time) {
+  const timestamp = date + "T" + time;
+  const value = new Date(timestamp + "Z");
+
+  if (Number.isNaN(value.getTime())) {
+    return false;
+  }
+
+  return value.toISOString().slice(0, 19) === timestamp;
+}
+
 
 export function parseMtn(text) {
-  const t = text.trim().replace(/\s+/g, " ");
-  if (!START.test(t)) return null;
+  // 1. Check the input.
+  if (typeof text !== "string" || !text.trim()) {
+    return null;
+  }
 
-  const pay = t.match(PAYMENT);
-  const id = t.match(TX_ID);
-  if (!pay || !id) return null;
+  const normalized = text.trim().replace(/\s+/g, " ");
 
-  const balance = t.match(BALANCE);
+  // 3. Check and remove the greeting.
+  // This recognizes a text format; it does not authenticate the sender.
+  if (!START.test(normalized)) {
+    return null;
+  }
+  
+  const body = normalized.replace(START, "");
+
+  const payment = body.match(PAYMENT);
+  const match = payment || body.match(RECEIVED);
+
+  if (!match) {
+    return null;
+  }
+
+
+  const { amount, party, date, time } = match.groups;
+  const amountNgwee = toNgwee(amount);
+  const counterparty = party.trim();
+
+  if (
+    amountNgwee === null ||
+    !counterparty ||
+    !validTimestamp(date, time)
+  ) {
+    return null;
+  }
+
+  const idMatch = body.match(TX_ID);
+  const balanceMatch = body.match(BALANCE);
+
+  const referenceCode = idMatch ? idMatch[1] : null;
+  const balanceAfter = balanceMatch
+    ? toNgwee(balanceMatch[1])
+    : null;
+
+  const warnings = [];
+
+  if (referenceCode === null) {
+    warnings.push("missing_or_invalid_transaction_id");
+  }
+
+  if (balanceAfter === null) {
+    warnings.push("missing_or_invalid_balance");
+  }
+
   return {
     provider: "mtn",
     currency: "ZMW",
-    referenceCode: id[1],
-    type: "payment",
-    amount: toCents(pay[1]),
-    fee: 0, 
-    balanceAfter: balance ? toCents(balance[1]) : null,
-    counterparty: pay[2].trim(),
-    occurredAt: `${pay[3]}T${pay[4]}+02:00`, 
+    referenceCode,
+    type: payment ? "payment" : "received",
+    direction: payment ? "outgoing" : "incoming",
+
+    amount: amountNgwee,
+    fee: null,
+    balanceAfter,
+
+    counterparty,
+
+    occurredAt: date + "T" + time + "+02:00",
+    warnings
   };
 }

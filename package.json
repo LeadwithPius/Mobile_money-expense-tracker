@@ -2,8 +2,9 @@
   "name": "mobile_money-expense-tracker",
   "version": "1.0.0",
   "description": "A full-stack app that turns pasted mobile money SMS messages into clean, categorized transactions and a spending dashboard.",
-  "main": "index.js",
+  "main": "src/index.js",
   "scripts": {
+    "start": "node src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -13,7 +14,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "bugs": {
     "url": "https://github.com/LeadwithPius/Mobile_money-expense-tracker/issues"
   },
