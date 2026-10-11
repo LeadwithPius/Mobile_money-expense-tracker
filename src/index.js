@@ -1,8 +1,5 @@
 import { readFile } from "node:fs/promises";
-import { parseMtn } from "./mtn.js";
-import { categorizeTransaction } from "./categorizer.js";
-import { deduplicateTransactions } from "./deduplicator.js";
-import { loadTransactions,saveTransactions} from "./storage.js";
+import { importMessages } from "./importService.js";
 
 const messagesFile = new URL(
   "../private/messages.txt",
@@ -10,104 +7,50 @@ const messagesFile = new URL(
 );
 
 async function main() {
-  const existingTransactions = await loadTransactions();
+  const text = await readFile(messagesFile, "utf8");
+  const result = await importMessages(text);
 
-  const content = await readFile(messagesFile, "utf8");
+  console.log("Messages read:", result.messagesRead);
+  console.log("Previously saved:", result.previouslySaved);
+  console.log("New transactions saved:", result.added);
+  console.log("Duplicates skipped:", result.duplicates);
+  console.log("Held for duplicate review:", result.needsReview.length);
+  console.log("Messages not parsed:", result.failed.length);
+  console.log("Total saved transactions:", result.totalSaved);
 
-  const messages = content
-    .split(/\r?\n/)
-    .map((text, index) => ({
-      text: text.trim(),
-      line: index + 1
-    }))
-    .filter(({ text }) => text.length > 0);
-
-  const transactions = [];
-  const unparsedLines = [];
-
-  for (const message of messages) {
-    const parsed = parseMtn(message.text);
-
-    if (!parsed) {
-      unparsedLines.push(message.line);
-      continue;
-    }
-
-    const categorized = categorizeTransaction(parsed);
-
-    transactions.push({
-      ...categorized,
-      sourceLine: message.line
-    });
-  }
-
-  const {
-    accepted,
-    duplicates,
-    needsReview
-  } = deduplicateTransactions(
-    transactions,
-    existingTransactions
-  );
-
-  const importedAt = new Date().toISOString();
-
-  const newTransactions = accepted.map((transaction) => {
-    const { sourceLine, ...data } = transaction;
-
-    return {
-      ...data,
-      importedAt
-    };
-  });
-
-  const allTransactions = [
-    ...existingTransactions,
-    ...newTransactions
-  ];
-
-  await saveTransactions(allTransactions);
-
-  console.log("Messages read:", messages.length);
-  console.log("Previously saved:", existingTransactions.length);
-  console.log("New transactions saved:", newTransactions.length);
-  console.log("Duplicates skipped:", duplicates.length);
-  console.log("Held for duplicate review:", needsReview.length);
-  console.log("Messages not parsed:", unparsedLines.length);
-  console.log("Total saved transactions:", allTransactions.length);
-
-  console.table(
-    newTransactions.map((transaction) => ({
-      type: transaction.type,
-      category: transaction.category,
-      amountZMW: (transaction.amount / 100).toFixed(2),
-      expense:
-        transaction.countsAsExpense === null
-          ? "Needs review"
-          : transaction.countsAsExpense
-            ? "Yes"
-            : "No",
-      categoryReview: transaction.needsCategoryReview
-        ? "Yes"
-        : "No",
-      occurredAt: transaction.occurredAt
-    }))
-  );
-
-  if (unparsedLines.length > 0) {
-    console.log(
-      "Check unsupported or invalid messages on lines:",
-      unparsedLines.join(", ")
+  if (result.addedTransactions.length > 0) {
+    console.table(
+      result.addedTransactions.map((transaction) => ({
+        type: transaction.type,
+        category: transaction.category,
+        amountZMW: (transaction.amount / 100).toFixed(2),
+        expense:
+          transaction.countsAsExpense === null
+            ? "Needs review"
+            : transaction.countsAsExpense
+              ? "Yes"
+              : "No",
+        categoryReview: transaction.needsCategoryReview
+          ? "Yes"
+          : "No",
+        occurredAt: transaction.occurredAt
+      }))
     );
   }
 
-  for (const item of needsReview) {
-    console.log(
-      `Line ${item.transaction.sourceLine}: ${item.reason}`
-    );
+  for (const failure of result.failed) {
+    console.log(`Line ${failure.line}: ${failure.reason}`);
   }
 
-  console.log("Saved to private/transactions.json");
+  for (const item of result.needsReview) {
+    console.log(`Line ${item.line}: ${item.reason}`);
+  }
+
+  if (result.added > 0) {
+    console.log("New transactions saved to private/transactions.json");
+  } else {
+    console.log("No new transactions to save.");
+  }
 }
 
 main().catch((error) => {
