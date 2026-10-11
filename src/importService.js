@@ -2,8 +2,9 @@ import { parseMtn } from "./mtn.js";
 import { categorizeTransaction } from "./categorizer.js";
 import { deduplicateTransactions } from "./deduplicator.js";
 import {loadTransactions,saveTransactions} from "./storage.js";
+import { withStorageLock } from "./storageQueue.js";
 
-export async function importMessages(text) {
+async function performImport(text) {
   if (typeof text !== "string") {
     throw new TypeError("Messages must be supplied as text.");
   }
@@ -82,4 +83,7 @@ export async function importMessages(text) {
       reason: item.reason
     }))
   };
+}
+export function importMessages(text) {
+  return withStorageLock(() => performImport(text));
 }

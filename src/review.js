@@ -2,6 +2,7 @@
 import { createInterface } from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 import {loadTransactions,saveTransactions} from "./storage.js";
+import { withStorageLock } from "./storageQueue.js";
 
 const PAYMENT_CATEGORIES = [
   "Airtime",
@@ -211,9 +212,50 @@ async function main() {
             : savedTransaction
       );
 
-      await saveTransactions(updatedTransactions);
-      transactions = updatedTransactions;
+      const categoryChanges = {category,
+  categorySource: "user",
+  needsCategoryReview: false,
+  countsAsExpense,
+  reviewedAt: new Date().toISOString()
+};
 
+transactions = await withStorageLock(async () => {
+
+  const latestTransactions = await loadTransactions();
+
+  const matchingIndexes = [];
+
+  latestTransactions.forEach((savedTransaction, savedIndex) => {
+    if (
+      savedTransaction.provider === transaction.provider &&
+      savedTransaction.referenceCode === transaction.referenceCode
+    ) {
+      matchingIndexes.push(savedIndex);
+    }
+  });
+
+  if (matchingIndexes.length !== 1) {
+    throw new Error(
+      "Cannot uniquely identify this transaction. Restart the review."
+    );
+  }
+
+  const targetIndex = matchingIndexes[0];
+
+  const updatedTransactions = latestTransactions.map(
+    (savedTransaction, savedIndex) =>
+      savedIndex === targetIndex
+        ? {
+            ...savedTransaction,
+            ...categoryChanges
+          }
+        : savedTransaction
+  );
+
+  await saveTransactions(updatedTransactions);
+
+  return updatedTransactions;
+});
       console.log("Category correction saved.");
     }
   } finally {

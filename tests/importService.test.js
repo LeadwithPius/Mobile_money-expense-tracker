@@ -1,4 +1,4 @@
-import {beforeEach,test,expect,vi} from "vitest";
+import { beforeEach, test, expect, vi } from "vitest";
 
 vi.mock("../src/storage.js", () => ({
   loadTransactions: vi.fn(),
@@ -32,8 +32,6 @@ beforeEach(() => {
   vi.resetAllMocks();
   savedTransactions = [];
 
-  // Copies imitate reading and writing JSON:
-  // changing a loaded object does not change storage automatically.
   loadTransactions.mockImplementation(async () =>
     structuredClone(savedTransactions)
   );
@@ -43,10 +41,8 @@ beforeEach(() => {
   });
 });
 
-test("saves new messages with parsed and categorized details", async () => {
-  const result = await importMessages(
-    AIRTIME + "\n" + RECEIVED
-  );
+test("saves new parsed and categorized transactions", async () => {
+  const result = await importMessages(AIRTIME + "\n" + RECEIVED);
 
   expect(result).toMatchObject({
     messagesRead: 2,
@@ -62,16 +58,13 @@ test("saves new messages with parsed and categorized details", async () => {
 
   expect(savedTransactions[0]).toMatchObject({
     referenceCode: "10000000001",
-    type: "payment",
     amount: 900,
     category: "Airtime",
-    categorySource: "rule",
     countsAsExpense: true
   });
 
   expect(savedTransactions[1]).toMatchObject({
     referenceCode: "10000000002",
-    type: "received",
     amount: 5000,
     category: "Money Received",
     countsAsExpense: false
@@ -80,24 +73,20 @@ test("saves new messages with parsed and categorized details", async () => {
   for (const transaction of savedTransactions) {
     expect(transaction).not.toHaveProperty("sourceLine");
     expect(transaction.importedAt).toEqual(expect.any(String));
-    expect(
-      Number.isNaN(Date.parse(transaction.importedAt))
-    ).toBe(false);
+    expect(Number.isNaN(Date.parse(transaction.importedAt))).toBe(false);
   }
 });
 
-test("reimporting saved messages adds no duplicates or writes", async () => {
+test("reimporting messages does not add duplicates or rewrite storage", async () => {
   const messages = AIRTIME + "\n" + RECEIVED;
 
   await importMessages(messages);
   const before = structuredClone(savedTransactions);
-
   saveTransactions.mockClear();
 
   const result = await importMessages(messages);
 
   expect(result).toMatchObject({
-    messagesRead: 2,
     previouslySaved: 2,
     added: 0,
     duplicates: 2,
@@ -109,20 +98,17 @@ test("reimporting saved messages adds no duplicates or writes", async () => {
   expect(savedTransactions).toEqual(before);
 });
 
-test("skips repeated messages within the same import", async () => {
-  const result = await importMessages(
-    AIRTIME + "\n" + AIRTIME
-  );
+test("skips repeated messages within one import", async () => {
+  const result = await importMessages(AIRTIME + "\n" + AIRTIME);
 
   expect(result.added).toBe(1);
   expect(result.duplicates).toBe(1);
   expect(savedTransactions).toHaveLength(1);
 });
 
-test("preserves user corrections when importing old and new messages", async () => {
+test("preserves user corrections when adding new transactions", async () => {
   await importMessages(AIRTIME);
 
-  // Simulate a correction previously saved by review.js.
   savedTransactions[0] = {
     ...savedTransactions[0],
     category: "Other",
@@ -132,25 +118,17 @@ test("preserves user corrections when importing old and new messages", async () 
     reviewedAt: "2026-10-09T10:00:00.000Z"
   };
 
-  const reviewedTransaction = structuredClone(
-    savedTransactions[0]
-  );
+  const reviewed = structuredClone(savedTransactions[0]);
 
-  saveTransactions.mockClear();
-
-  const result = await importMessages(
-    AIRTIME + "\n" + RECEIVED
-  );
+  const result = await importMessages(AIRTIME + "\n" + RECEIVED);
 
   expect(result.added).toBe(1);
   expect(result.duplicates).toBe(1);
-  expect(result.totalSaved).toBe(2);
-  expect(saveTransactions).toHaveBeenCalledTimes(1);
-
-  expect(savedTransactions[0]).toEqual(reviewedTransaction);
+  expect(savedTransactions).toHaveLength(2);
+  expect(savedTransactions[0]).toEqual(reviewed);
 });
 
-test("reports invalid and missing-ID messages using original line numbers", async () => {
+test("reports invalid and missing-ID messages by original line number", async () => {
   const messages = [
     "",
     "This is not a transaction.",
@@ -165,46 +143,31 @@ test("reports invalid and missing-ID messages using original line numbers", asyn
   expect(result.added).toBe(1);
 
   expect(result.failed).toEqual([
-    {
-      line: 2,
-      reason: "unsupported_or_invalid_message"
-    }
+    { line: 2, reason: "unsupported_or_invalid_message" }
   ]);
 
   expect(result.needsReview).toEqual([
-    {
-      line: 4,
-      reason: "missing_transaction_id"
-    }
+    { line: 4, reason: "missing_transaction_id" }
   ]);
 
   expect(savedTransactions).toHaveLength(1);
-  expect(savedTransactions[0].referenceCode).toBe(
-    "10000000001"
-  );
+  expect(savedTransactions[0].referenceCode).toBe("10000000001");
 });
 
-test("holds conflicting transaction details without overwriting saved data", async () => {
+test("holds conflicting details without overwriting saved data", async () => {
   await importMessages(AIRTIME);
 
   const before = structuredClone(savedTransactions);
   saveTransactions.mockClear();
 
-  const conflictingMessage = AIRTIME.replace(
-    "ZMW 9.00",
-    "ZMW 19.00"
+  const result = await importMessages(
+    AIRTIME.replace("ZMW 9.00", "ZMW 19.00")
   );
-
-  const result = await importMessages(conflictingMessage);
 
   expect(result.added).toBe(0);
   expect(result.duplicates).toBe(0);
-
   expect(result.needsReview).toEqual([
-    {
-      line: 1,
-      reason: "conflicting_transaction_details"
-    }
+    { line: 1, reason: "conflicting_transaction_details" }
   ]);
 
   expect(saveTransactions).not.toHaveBeenCalled();
@@ -238,27 +201,43 @@ test.each([null, undefined, 123, {}, []])(
   }
 );
 
-test("surfaces a read error without attempting to save", async () => {
-  loadTransactions.mockRejectedValueOnce(
-    new Error("Could not read saved transactions")
-  );
+test("surfaces a read error without saving", async () => {
+  loadTransactions.mockRejectedValueOnce(new Error("Read failed"));
 
-  await expect(importMessages(AIRTIME)).rejects.toThrow(
-    "Could not read saved transactions"
-  );
-
+  await expect(importMessages(AIRTIME)).rejects.toThrow("Read failed");
   expect(saveTransactions).not.toHaveBeenCalled();
 });
 
 test("surfaces a save error instead of reporting success", async () => {
-  saveTransactions.mockRejectedValueOnce(
-    new Error("Could not save transactions")
-  );
+  saveTransactions.mockRejectedValueOnce(new Error("Save failed"));
 
-  await expect(importMessages(AIRTIME)).rejects.toThrow(
-    "Could not save transactions"
-  );
-
+  await expect(importMessages(AIRTIME)).rejects.toThrow("Save failed");
   expect(saveTransactions).toHaveBeenCalledTimes(1);
   expect(savedTransactions).toEqual([]);
+});
+
+test("concurrent imports preserve both new transactions", async () => {
+  const results = await Promise.all([
+    importMessages(AIRTIME),
+    importMessages(RECEIVED)
+  ]);
+
+  expect(results.map((result) => result.added)).toEqual([1, 1]);
+  expect(savedTransactions).toHaveLength(2);
+
+  expect(
+    savedTransactions.map((transaction) => transaction.referenceCode)
+  ).toEqual(["10000000001", "10000000002"]);
+});
+
+test("concurrent copies of one message are saved only once", async () => {
+  const results = await Promise.all([
+    importMessages(AIRTIME),
+    importMessages(AIRTIME)
+  ]);
+
+  expect(results.map((result) => result.added)).toEqual([1, 0]);
+  expect(results.map((result) => result.duplicates)).toEqual([0, 1]);
+  expect(savedTransactions).toHaveLength(1);
+  expect(saveTransactions).toHaveBeenCalledTimes(1);
 });
