@@ -1,97 +1,88 @@
 # Mobile Money Expense Tracker
 
-A full-stack app that turns pasted mobile money SMS messages into clean, categorized transactions and a spending dashboard.
+A local Node.js prototype that turns MTN Zambia SMS messages into categorized
+transactions. It currently runs in the terminal. A web dashboard, database-backed
+API, authentication, and optional AI categorization are future work.
 
-> 🚧 **Work in progress.** The backend API works and is tested. The frontend (an installable React PWA) is planned and not started yet. See the [Roadmap](#-roadmap) for current progress.
+## Implemented
 
-## 📖 About
+- MTN payments, received money, and withdrawals, including timestamp variations.
+- Monetary values stored as integer ngwee: `900` means ZMW 9.00.
+- Airtime and Mobile Data rules; unclear payments stay Uncategorized.
+- Duplicate checks by provider and transaction ID; missing/conflicting IDs need review.
+- Local JSON storage preserving prior records and user category corrections.
+- Interactive category review and expense/transfer selection.
+- All-time and monthly summaries separating confirmed and suggested spending.
+- Vitest parser, categorizer, deduplication and summary tests with fictional fixtures.
 
-Mobile money users in East and Southern Africa often have no record of their spending beyond a long scroll of SMS confirmations. This project parses those messages into structured data so people can search, total, and understand where their money goes.
+## Setup
 
-The goal is a live, installable Progressive Web App backed by an API built from scratch with Node.js and PostgreSQL.
-
-## ✅ What works today
-
-- M-Pesa SMS parser: sent, received, paybill, buy goods, withdrawal, and airtime messages
-- Duplicate-safe import: pasting the same message twice never creates a second record
-- Keyword-based categorization
-- User registration and login (bcrypt + JWT)
-- Per-user data isolation, rate limiting, input validation, and secure headers
-- Transaction listing with filters and pagination
-- Automated tests and CI
-
-## 🧱 Tech Stack
-
-| Layer | Technology |
-|---|---|
-| API | Node.js, Express |
-| Database | PostgreSQL |
-| Validation | Zod |
-| Auth | JWT, bcrypt |
-| Testing | Vitest, Supertest |
-| CI | GitHub Actions |
-| Frontend (planned) | React, Vite, Tailwind CSS, Recharts, `vite-plugin-pwa` |
-
-## 🚀 Getting Started
-
-**Prerequisites:** Node.js 20 or newer, and PostgreSQL (local or a free hosted instance such as Neon or Supabase).
+Use a supported Node.js LTS version compatible with the locked dependencies.
+This checkout was validated with Node.js 24.19.0.
 
 ```bash
-git clone https://github.com/LeadwithPius/Mobile_money-expense-tracker.git
-cd Mobile_money-expense-tracker
-npm install
-cp .env.example .env     # set DATABASE_URL and JWT_SECRET
-npm run migrate
-npm run dev              # http://localhost:3000
+npm ci
+mkdir -p private
 ```
 
-Run the tests with `npm test`.
+Create `private/messages.txt` locally, with one complete SMS per line. Blank lines
+are ignored. Do not commit real financial messages.
 
-## 📡 API
+```bash
+npm test
+npm start
+npm run review
+npm run summary
+npm run summary -- 2026-10
+```
 
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| `GET` | `/health` | No | Health check |
-| `POST` | `/auth/register` | No | Create an account, returns a token |
-| `POST` | `/auth/login` | No | Log in, returns a token |
-| `POST` | `/transactions/import` | Yes | Parse and store pasted messages |
-| `GET` | `/transactions` | Yes | List transactions (filters: `from`, `to`, `category`, `type`, `limit`, `offset`) |
+`npm start` imports new records into `private/transactions.json`. Repeated imports
+skip matching records. Missing-ID or conflicting messages are held out and reported
+by source line. Their original text remains in messages.txt.
 
-Protected routes need the header `Authorization: Bearer <token>`. Amounts are stored and returned in cents (`50000` means Ksh 500.00).
+`npm run review` saves each confirmed category correction. Run imports and reviews
+one at a time: the JSON store does not support concurrent writers.
 
-## 🗺️ Roadmap
+`npm run summary` reads saved records without changing them. Monthly reports use
+Africa/Lusaka time. Received money is not automatically income. Withdrawals are
+cash transfers, not automatically spending. Unknown expense treatment stays visible.
+Confirmed spending requires completed review; rule suggestions remain separate.
+Amount totals exclude fees, which are reported separately, including unknown-fee
+counts. These totals are not a current wallet balance and exclude held messages.
 
-**Backend**
-- [x] M-Pesa parser with tests
-- [x] Authentication and per-user data isolation
-- [x] Duplicate-safe import
-- [x] Transaction filtering and pagination
-- [x] Automated tests and CI
-- [ ] Harden the parser with real anonymized messages
-- [ ] Custom categorization rules and category editing
-- [ ] Monthly report endpoint
-- [ ] Demo mode with fake data
-- [ ] CSV export
-- [ ] Airtel Money and MTN MoMo parsers
-- [ ] OpenAPI docs
+## Files
 
-**Frontend (PWA)**
-- [ ] Project setup, login, and demo mode
-- [ ] Import and transaction list screens
-- [ ] Dashboard with charts
-- [ ] Manifest, service worker, offline support, and install prompt
+| File | Purpose |
+| --- | --- |
+| `src/mtn.js` | MTN extraction and validation |
+| `src/categorizer.js` | Initial category suggestions |
+| `src/deduplicator.js` | Duplicate/conflict checks |
+| `src/storage.js` | JSON reads and atomic file replacement |
+| `src/index.js` | Import command |
+| `src/review.js` | Category review command |
+| `src/summaryService.js` | Reusable summary calculations |
+| `src/summary.js` | Summary command |
+| `tests/` | Automated tests |
 
-**Deployment**
-- [ ] API and database hosted online
-- [ ] Frontend deployed and linked from my portfolio
+## Privacy and limitations
 
-## 🔐 Privacy
+The whole `private/` folder, dependencies and `.env` are ignored. Ignoring files does
+not remove previously committed copies from history. Earlier commits must be handled
+separately if private data was published. Use fictional data for demos and tests.
+Category review displays counterparties locally; summaries show aggregate amounts.
 
-SMS messages contain sensitive financial details. Raw message text is not stored, only the parsed fields, and it is never written to logs. Any public demo will use fake data only.
+The parser does not authenticate SMS senders, extract fees, or support every MTN
+format. Missing IDs need a future review/import workflow. There is no API,
+authentication, PostgreSQL storage, M-Pesa parser, or frontend in this version.
 
-## 👤 Author
+## Next steps
 
-**Bruce Pius**, Computer Science student and full-stack developer
+1. Add a durable review workflow for missing-ID and conflicting messages.
+2. Test and improve category review, including editing previously reviewed entries.
+3. Build a local dashboard and import/review interface around these modules.
+4. Add a database/API and user separation before supporting multiple users.
+5. Add optional AI suggestions with user overrides.
 
-- Portfolio: [leadwithpius.netlify.app](https://leadwithpius.netlify.app/)
-- GitHub: [@LeadwithPius](https://github.com/LeadwithPius)
+## Author
+
+Bruce Pius — [GitHub](https://github.com/LeadwithPius)
